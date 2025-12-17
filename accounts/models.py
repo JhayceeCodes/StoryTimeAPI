@@ -40,6 +40,6 @@ class User(AbstractUser):
 
 
 class Authors(models.Model):
-    user = models.ForeignKey(User, on_delete=models.SET_NULL)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     pen_name = models.CharField(max_length=50)
     ban_status = models.BooleanField(default=False)
