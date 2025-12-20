@@ -46,3 +46,28 @@ class SendVerificationEmailView(APIView):
             status=status.HTTP_200_OK
         )
         
+
+class VerifyEmailView(APIView):
+    def get(self, request, uid, token):
+        user = verify_token(uid, token)
+
+        if not user:
+            return Response(
+                {'detail': 'Invalid or expired verification link.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if user.is_verified:
+            return Response(
+                {'detail': 'Email already verified.'},
+                status=status.HTTP_200_OK
+            )
+
+        
+        user.is_verified = True
+        user.save(update_fields=["is_verified"])
+
+        return Response(
+            {'message': 'Email verified successfully.'},
+            status=status.HTTP_200_OK
+        )
