@@ -1,7 +1,8 @@
+import re
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import get_user_model
-from .models import User
+from .models import User, Author
 
 
 User = get_user_model()
@@ -20,3 +21,28 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 class LoginSerializer(TokenObtainPairSerializer):
     ...
+
+class AuthorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Author
+        fields = ['pen_name', 'ban_status']
+        read_only_fields = ['ban_status']
+
+    
+    def validate_pen_name(self, value):
+        if len(value) < 3:
+            raise serializers.ValidationError(
+                "Pen name must be at least 3 characters long."
+            )
+
+        if len(value) > 50:
+            raise serializers.ValidationError(
+                "Pen name must not exceed 50 characters."
+            )
+
+        if not re.fullmatch(r"[A-Za-z ]+", value):
+            raise serializers.ValidationError(
+                "Pen name must contain letters only."
+            )
+
+        return value

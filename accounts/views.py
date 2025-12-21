@@ -4,10 +4,10 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from .serializers import RegisterSerializer, LoginSerializer
+from .serializers import RegisterSerializer, LoginSerializer, AuthorSerializer
 from .tasks import send_password_reset_email_task, send_verification_email_task
 from .utils import generate_token, verify_token
-from .models import  User
+from .models import  User, Author
 
 
 
@@ -19,7 +19,7 @@ class RegisterView(generics.CreateAPIView):
         user = serializer.save()
 
         uid, token = generate_token(user)
-        verify_link = f"/verify-email/..."
+        verify_link = f"/verify-email/{uid}/{token}..."
         send_verification_email_task.delay(user.id, verify_link)
     
         
@@ -130,3 +130,32 @@ class PasswordResetConfirmView(APIView):
             {"message": "Password reset successful"},
             status=status.HTTP_200_OK
         )
+
+
+class AuthorView(generics.RetrieveUpdateAPIView):
+    serializer_class = AuthorSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user.author
+
+class RegisterAuthorView(generics.CreateAPIView):
+    serializer_class = AuthorSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        if hasattr(request.user, "author"):
+            return Response(
+                {"detail": "Author profile already exists."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=request.user)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+
+
