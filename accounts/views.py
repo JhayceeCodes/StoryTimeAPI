@@ -40,7 +40,7 @@ class SendVerificationEmailView(APIView):
             )
 
         uid, token = generate_token(user)
-        verify_link = f"/verify-email/{uid}/{token}/"
+        verify_link = f"http://127.0.0.1:8000/accounts/verify/{uid}/{token}/"
 
         send_verification_email_task.delay(user.id, verify_link)
 
@@ -89,7 +89,7 @@ class RequestPasswordResetView(APIView):
 
         uid, token = generate_token(user)
         
-        reset_link = f"/reset-password/{uid}/{token}/"
+        reset_link = f"http://127.0.0.1:8000/reset/{uid}/{token}/"
         
         send_password_reset_email_task.delay(user.id, reset_link)
 
@@ -99,8 +99,8 @@ class RequestPasswordResetView(APIView):
 class PasswordResetConfirmView(APIView):
     permission_classes = []
 
-    def post(self, request, uidb64, token):
-        user = verify_token(uidb64, token)
+    def post(self, request, uid, token):
+        user = verify_token(uid, token)
 
         if not user:
             return Response(
