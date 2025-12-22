@@ -45,13 +45,5 @@ class Migration(migrations.Migration):
                 ('objects', accounts.models.CustomUserManager()),
             ],
         ),
-        migrations.CreateModel(
-            name='Authors',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('pen_name', models.CharField(max_length=50)),
-                ('ban_status', models.BooleanField(default=False)),
-                ('user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
-            ],
-        ),
+        
     ]

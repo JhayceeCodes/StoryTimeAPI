@@ -2,6 +2,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from .serializers import RegisterSerializer, LoginSerializer, AuthorSerializer
@@ -158,4 +159,12 @@ class RegisterAuthorView(generics.CreateAPIView):
 
 
 
+class LogoutView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
+    def post(self, request):
+        refresh_token = request.data.get("refresh")
+        token = RefreshToken(refresh_token)
+        token.blacklist()
+
+        return Response({"message": "Logged out successfully"})
