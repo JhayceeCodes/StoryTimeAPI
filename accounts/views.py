@@ -1,11 +1,10 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from .serializers import RegisterSerializer, LoginSerializer, AuthorSerializer
+from .serializers import RegisterSerializer, AuthorSerializer
 from .tasks import send_password_reset_email_task, send_verification_email_task
 from .utils import generate_token, verify_token
 from .models import  User
@@ -21,13 +20,10 @@ class RegisterView(generics.CreateAPIView):
         user = serializer.save()
 
         uid, token = generate_token(user)
-        verify_link = f"/verify-email/{uid}/{token}..."
+        verify_link = f"/verify-email/{uid}/{token}"
         send_verification_email_task.delay(user.id, verify_link)
     
         
-class LoginView(TokenObtainPairView):
-    serializer_class = LoginSerializer
-
 
 class SendVerificationEmailView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -165,7 +161,23 @@ class LogoutView(APIView):
 
     def post(self, request):
         refresh_token = request.data.get("refresh")
-        token = RefreshToken(refresh_token)
-        token.blacklist()
 
-        return Response({"message": "Logged out successfully"})
+        if not refresh_token:
+            return Response(
+                {"detail": "Refresh token is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+        except Exception:
+            return Response(
+                {"detail": "Invalid or expired refresh token."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response(
+            {"message": "Logged out successfully."},
+            status=status.HTTP_205_RESET_CONTENT
+        )
