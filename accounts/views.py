@@ -8,7 +8,8 @@ from django.core.exceptions import ValidationError
 from .serializers import RegisterSerializer, LoginSerializer, AuthorSerializer
 from .tasks import send_password_reset_email_task, send_verification_email_task
 from .utils import generate_token, verify_token
-from .models import  User, Author
+from .models import  User
+from .permissions import IsVerified
 
 
 
@@ -142,7 +143,7 @@ class AuthorView(generics.RetrieveUpdateAPIView):
 
 class RegisterAuthorView(generics.CreateAPIView):
     serializer_class = AuthorSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsVerified]
 
     def create(self, request, *args, **kwargs):
         if hasattr(request.user, "author"):
