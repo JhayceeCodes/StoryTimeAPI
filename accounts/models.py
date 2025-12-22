@@ -16,6 +16,7 @@ class CustomUserManager(UserManager):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_verified', True)
+        extra_fields.setdefault('role', 'superuser')
 
         if extra_fields.get('is_staff') is not True:
             raise ValueError("Superuser must have is_staff=True")
@@ -30,6 +31,14 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_verified = models.BooleanField(default=False)
+
+    ROLE_CHOICES = (
+        ('superuser', 'Superuser'), 
+        ('admin', 'Admin'),
+        ('moderator', 'Moderator'),
+        ('user', 'User'),
+    )
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email']

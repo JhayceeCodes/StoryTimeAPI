@@ -43,3 +43,9 @@ class AuthorSerializer(serializers.ModelSerializer):
             )
 
         return value
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'is_verified', 'role']
+        read_only_fields = ['role']

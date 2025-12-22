@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from .serializers import RegisterSerializer, AuthorSerializer
+from .serializers import RegisterSerializer, AuthorSerializer, ProfileSerializer
 from .tasks import send_password_reset_email_task, send_verification_email_task
 from .utils import generate_token, verify_token
 from .models import  User
@@ -182,3 +182,11 @@ class LogoutView(APIView):
             {"message": "Logged out successfully."},
             status=status.HTTP_205_RESET_CONTENT
         )
+
+
+class ProfileView(generics.RetrieveUpdateAPIView):
+    serializer_class = ProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
