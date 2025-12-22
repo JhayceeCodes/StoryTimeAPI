@@ -3,15 +3,16 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from .serializers import RegisterSerializer, AuthorSerializer, ProfileSerializer
+from .serializers import RegisterSerializer, AuthorSerializer, ProfileSerializer, LoginSerializer
 from .tasks import send_password_reset_email_task, send_verification_email_task
 from .utils import generate_token, verify_token
 from .models import  User
 from .permissions import IsVerified
 
-frontend_url = os.getnv("FRONTEND_URL", "http://127.0.0.1:8000")
+frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:8000")
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
@@ -156,6 +157,8 @@ class RegisterAuthorView(generics.CreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+class LoginView(TokenObtainPairView):
+    serializer_class = LoginSerializer
 
 class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]

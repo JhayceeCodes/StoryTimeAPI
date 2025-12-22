@@ -1,5 +1,6 @@
 import re
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import get_user_model
 from .models import User, Author
 
@@ -49,3 +50,14 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ['username', 'email', 'is_verified', 'role']
         read_only_fields = ['role']
+
+
+class LoginSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs) 
+
+        data['is_verified'] = self.user.is_verified
+        data['role'] = self.user.role
+
+        return data
+        
