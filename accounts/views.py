@@ -22,7 +22,7 @@ class RegisterView(generics.CreateAPIView):
         user = serializer.save()
 
         uid, token = generate_token(user)
-        verify_link = f"{frontend_url}/verify-email/{uid}/{token}"
+        verify_link = f"{frontend_url}/verify/{uid}/{token}"
         send_verification_email_task.delay(user.id, verify_link)
     
         
