@@ -1,4 +1,183 @@
 # StoryTime API
-...
+
+StoryTime API is a backend service built with Django REST Framework (DRF) that powers a storytelling platform.
+It provides secure authentication, email verification, role-based access control, and author management for users who want to create and manage stories.
+
+ 
+
+## Features
+
+- JWT Authentication (Login, Refresh, Logout)
+
+- Email verification & resend verification email
+
+- Password reset flow (request & confirm)
+
+- User profile management
+
+- Author profile creation & update
+
+- Role-based access control (Superuser, Admin, Moderator, User)
+
+- Protected endpoints for verified users only
+
+
+## Tech Stack
+
+Backend: Django, Django REST Framework
+
+Authentication: JWT (SimpleJWT + Token Blacklist)
+
+Database: PostgreSQL (recommended)
+
+Task Queue: Celery (for email handling)
+
+Email: SMTP (e.g., Gmail)
+
+Documentation & Testing: Postman
+
+## API Documentation (Postman)
+
+You can explore and test all endpoints using the Postman collection below:
 
 [<img src="https://run.pstmn.io/button.svg" alt="Run In Postman" style="width: 128px; height: 32px;">](https://app.getpostman.com/run-collection/48879534-adba11dc-e4ec-481b-aaca-4383a50c8b84?action=collection%2Ffork&source=rip_markdown&collection-url=entityId%3D48879534-adba11dc-e4ec-481b-aaca-4383a50c8b84%26entityType%3Dcollection%26workspaceId%3D72f57aef-3c3d-42aa-9120-b8a125dae087)
+
+
+## AVAILABLE ENDPOINTS
+
+
+### Authentication Endpoints
+| Method | Endpoint                            | Description       |
+| ------ | ----------------------------------- | ----------------- |
+| POST   | `/accounts/register/`               | Register a new user   |
+| POST   | `/accounts/login/`               | Login and obtain access & refresh token   |
+| POST   | `/accounts/refresh/`                  | Refresh access token   |
+| POST   | `/account/logout/`                  | Logout and blacklist refresh token  |
+
+### Email Verification
+| Method | Endpoint                            | Description       |
+| ------ | ----------------------------------- | ----------------- |
+| POST   | `/accounts/resend-email/`               | Resend verification email   |
+| GET   | `/accounts/verify/<uid>/<token>/`               | Verify email address   |
+
+### Password Reset
+
+| Method | Endpoint                            | Description       |
+| ------ | ----------------------------------- | ----------------- |
+| POST   | `/accounts/password-reset/`               | Request password reset email   |
+| GET   | `/accounts/reset/<uid>/<token>/`               | Confirm password reset  |
+
+### User & Profile
+| Method | Endpoint                            | Description       |
+| ------ | ----------------------------------- | ----------------- |
+| GET/PATCH   | `/accounts/profile/`               | Retrieve or update user profile|
+
+### Author Management
+
+| Method | Endpoint                            | Description       |
+| ------ | ----------------------------------- | ----------------- |
+| POST   | `/accounts/register-author/`               | Create an author profile   |
+| GET/PATCH   | `/accounts/reset/<uid>/<token>/`               | Retrieve or update author information
+  |
+
+`Each user can have only one author profile.
+Pen names are validated (letters only, 3–50 characters).`
+
+### Role Management
+
+| Method | Endpoint                            | Description       |
+| ------ | ----------------------------------- | ----------------- |
+| PATCH   | `/accounts/users/role`               | Update user role (Superuser only)   |
+
+
+### Supported roles:
+
+- user  ---| regular authenticated users, can read and write stories unless banned.
+
+- moderator ---| has permission to delete stories and can request ban of such writer
+
+- admin ---| has permission to delete stories and ban writers
+
+- superuser ---| can do all mentioned above and can change a user's role
+
+
+
+
+### Permissions & Security
+
+| Only authenticated users can access protected endpoints
+
+| Only email-verified users can access certain resources
+
+| Role updates restricted to Superusers
+
+| JWT refresh tokens are blacklisted on logout
+
+| Passwords are securely hashed
+
+### Project Structure
+```text
+|-- StoryTime
+|   |-- __init__.py
+|   |-- asgi.py
+|   |-- celery.py
+|   |-- settings.py
+|   |-- urls.py
+|   `-- wsgi.py
+|-- accounts
+|   |-- __init__.py
+|   |-- admin.py
+|   |-- apps.py
+|   |-- migrations
+|   |-- models.py
+|   |-- permissions.py
+|   |-- serializers.py
+|   |-- tasks.py
+|   |-- templates
+|   |   `-- emails
+|   |-- tests.py
+|   |-- urls.py
+|   |-- utils.py
+|   `-- views.py
+|-- core
+|   |-- __init__.py
+|   |-- admin.py
+|   |-- apps.py
+|   |-- migrations
+|   |-- models.py
+|   |-- tests.py
+|   |-- utils.py
+|   `-- views.py
+|-- manage.py
+`-- requirements.txt
+```
+
+▶️ Running Locally
+```bash
+> git clone https://github.com/JhayceeCodes/StoryTimeAPI
+> cd StoryTimeAPI
+> python -m venv venv
+> source venv/bin/activate
+> pip install -r requirements.txt
+# create your own .env file using the .env.example as template
+> python manage.py migrate
+> python manage.py runserver
+```
+
+### Future Improvements
+
+- Story & chapter management
+
+- Stories reviews, likes and dislikes
+
+- Rate limiting
+
+
+### Contributing
+
+Contributions are welcome!
+Feel free to open issues or submit pull requests.
+
+### License
+
+This project is licensed under the MIT License.
