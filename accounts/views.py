@@ -204,6 +204,10 @@ class UpdateUserRoleView(generics.GenericAPIView):
 
         user = serializer.validated_data["user_instance"]
         user.role = serializer.validated_data["role"]
+        print(user.role)
+        if user.role.lower() == "admin":
+            user.is_staff = True
+            print("Hello")
         user.save()
 
         return Response({"message": f"{user.username} role updated to {user.role}"}, status=status.HTTP_200_OK)

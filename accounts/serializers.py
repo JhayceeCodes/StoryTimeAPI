@@ -75,11 +75,12 @@ class UserRoleUpdateSerializer(serializers.Serializer):
     def validate(self, attrs):
         user_id = attrs.get("user_id")
         username = attrs.get("username")
+        new_role = attrs.get("role")
 
         if not user_id and not username:
             raise serializers.ValidationError("Provide either user_id or username.")
 
-        # Fetch the user
+        
         try:
             if user_id:
                 user = User.objects.get(id=user_id)
@@ -92,6 +93,10 @@ class UserRoleUpdateSerializer(serializers.Serializer):
         request_user = self.context["request"].user
         if user == request_user:
             raise serializers.ValidationError("You cannot change your own role.")
+        
+
+        if user.role == new_role:
+            raise serializers.ValidationError(f"{user.username} already has the role '{new_role}'.")
 
         attrs["user_instance"] = user
         return attrs
