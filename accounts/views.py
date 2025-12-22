@@ -1,3 +1,4 @@
+import os
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,7 +11,7 @@ from .utils import generate_token, verify_token
 from .models import  User
 from .permissions import IsVerified
 
-
+frontend_url = os.getnv("FRONTEND_URL", "http://127.0.0.1:8000")
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
@@ -20,7 +21,7 @@ class RegisterView(generics.CreateAPIView):
         user = serializer.save()
 
         uid, token = generate_token(user)
-        verify_link = f"/verify-email/{uid}/{token}"
+        verify_link = f"{frontend_url}/verify-email/{uid}/{token}"
         send_verification_email_task.delay(user.id, verify_link)
     
         
@@ -38,7 +39,7 @@ class SendVerificationEmailView(APIView):
             )
 
         uid, token = generate_token(user)
-        verify_link = f"http://127.0.0.1:8000/accounts/verify/{uid}/{token}/"
+        verify_link = f"{frontend_url}/accounts/verify/{uid}/{token}/"
 
         send_verification_email_task.delay(user.id, verify_link)
 
@@ -87,7 +88,7 @@ class RequestPasswordResetView(APIView):
 
         uid, token = generate_token(user)
         
-        reset_link = f"http://127.0.0.1:8000/reset/{uid}/{token}/"
+        reset_link = f"{frontend_url}/reset/{uid}/{token}/"
         
         send_password_reset_email_task.delay(user.id, reset_link)
 
