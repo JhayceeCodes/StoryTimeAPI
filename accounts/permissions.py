@@ -11,3 +11,15 @@ class IsVerified(BasePermission):
             request.user.is_authenticated and
             request.user.is_verified
         )
+
+
+class IsSuperuser(BasePermission):
+    message = "Only Superusers can access this endpoint."
+
+    def has_permission(self, request, view):
+        return request.user.is_superuser
+    
+
+class IsModerator(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.role == "moderator"

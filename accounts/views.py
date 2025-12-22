@@ -6,11 +6,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from .serializers import RegisterSerializer, AuthorSerializer, ProfileSerializer, LoginSerializer
+from .serializers import RegisterSerializer, AuthorSerializer, ProfileSerializer, LoginSerializer, UserRoleUpdateSerializer
 from .tasks import send_password_reset_email_task, send_verification_email_task
 from .utils import generate_token, verify_token
 from .models import  User
-from .permissions import IsVerified
+from .permissions import IsVerified, IsSuperuser
 
 frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:8000")
 
@@ -193,3 +193,17 @@ class ProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+    
+class UpdateUserRoleView(generics.GenericAPIView):
+    serializer_class = UserRoleUpdateSerializer
+    permission_classes = [IsSuperuser]
+
+    def patch(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.validated_data["user_instance"]
+        user.role = serializer.validated_data["role"]
+        user.save()
+
+        return Response({"message": f"{user.username} role updated to {user.role}"}, status=status.HTTP_200_OK)

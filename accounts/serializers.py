@@ -49,7 +49,12 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['username', 'email', 'is_verified', 'role']
-        read_only_fields = ['role']
+        read_only_fields = ['role', 'is_verified']
+
+    def validate_username(self, value):
+        if len(value) < 3:
+            raise serializers.ValidationError("Username must be at least 3 characters")
+        return value
 
 
 class LoginSerializer(TokenObtainPairSerializer):
@@ -60,4 +65,34 @@ class LoginSerializer(TokenObtainPairSerializer):
         data['role'] = self.user.role
 
         return data
+    
+
+class UserRoleUpdateSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField(required=False)
+    username = serializers.CharField(required=False)
+    role = serializers.ChoiceField(choices=["user", "admin", "moderator"])
+
+    def validate(self, attrs):
+        user_id = attrs.get("user_id")
+        username = attrs.get("username")
+
+        if not user_id and not username:
+            raise serializers.ValidationError("Provide either user_id or username.")
+
+        # Fetch the user
+        try:
+            if user_id:
+                user = User.objects.get(id=user_id)
+            else:
+                user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User not found.")
+
+        # Prevent superuser from demoting themselves
+        request_user = self.context["request"].user
+        if user == request_user:
+            raise serializers.ValidationError("You cannot change your own role.")
+
+        attrs["user_instance"] = user
+        return attrs
         
