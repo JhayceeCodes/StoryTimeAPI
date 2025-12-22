@@ -208,6 +208,8 @@ class UpdateUserRoleView(generics.GenericAPIView):
         if user.role.lower() == "admin":
             user.is_staff = True
             print("Hello")
+        else:
+            user.is_staff = False
         user.save()
 
         return Response({"message": f"{user.username} role updated to {user.role}"}, status=status.HTTP_200_OK)
