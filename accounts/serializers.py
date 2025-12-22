@@ -1,6 +1,5 @@
 import re
 from rest_framework import serializers
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import get_user_model
 from .models import User, Author
 
@@ -19,8 +18,6 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
 
-class LoginSerializer(TokenObtainPairSerializer):
-    ...
 
 class AuthorSerializer(serializers.ModelSerializer):
     class Meta:
