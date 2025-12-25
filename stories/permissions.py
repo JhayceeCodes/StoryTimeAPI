@@ -9,7 +9,7 @@ class IsAuthor(BasePermission):
 
 class IsStoryOwner(BasePermission):
     def has_object_permission(self, request, view, obj):
-        return hasattr(request.user, "author") and obj.author.user == request.user
+        return request.user.is_authenticated and hasattr(request.user, "author") and obj.author.user == request.user
     
 
 class CanDeleteStory(BasePermission):
