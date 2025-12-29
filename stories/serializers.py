@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Story, StoryReaction
 
 class StorySerializer(serializers.ModelSerializer):
+    author = serializers.CharField(source="author.pen_name")
     class Meta:
         model = Story
         fields = "__all__"
@@ -16,12 +17,14 @@ class StorySerializer(serializers.ModelSerializer):
 class StoryReactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = StoryReaction
-        fields = "__all__"
-        read_only_fields = ["user", "updated_at"]
+        fields = ["reaction", "story", "updated_at"]
+        read_only_fields = ["story", "updated_at"]
+
 
     
     def validate(self, attrs):
-        user = self.context.get["request"].user
+        request = self.context.get("request")
+        user = request.user if request else None
         story = attrs.get("story")
 
         if StoryReaction.objects.filter(user= user, story=story).exists():
@@ -29,3 +32,10 @@ class StoryReactionSerializer(serializers.ModelSerializer):
                 "You have already reacted to this story."
             )
         return attrs
+
+    def validate_reaction(self, value):
+        if value not in ("like", "dislike"):
+            raise serializers.ValidationError(
+                "Reaction must be either 'like' or 'dislike'."
+            )
+        return value

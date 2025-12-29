@@ -51,15 +51,12 @@ class StoryReactionView(APIView):
 
     @transaction.atomic
     def post(self, request, story_id):
-        reaction_type = request.data.get("reaction")
 
-        if reaction_type not in ("like", "dislike"):
-            return Response(
-                {"detail": "Reaction must be 'like' or 'dislike'"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
         story = get_object_or_404(Story, id=story_id)
+
+        serializer = StoryReactionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reaction_type = serializer.validated_data["reaction"]
 
         reaction, created = StoryReaction.objects.get_or_create(
             user=request.user,
@@ -67,44 +64,69 @@ class StoryReactionView(APIView):
             defaults={"reaction": reaction_type}
         )
 
-
         if not created:
-            if reaction.reaction == reaction_type:
-                return Response(
-                    {"detail": "You have already reacted to this story"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            if reaction.reaction == "like" :
-                Story.objects.filter(id=story.id).update(
-                    likes = F("likes") - 1,
-                    dislikes = F("dislikes") + 1
-                )
-            
-            else:
-                Story.objects.filter(id=story.id).update(
-                    likes = F("likes") + 1,
-                    dislikes = F("dislikes") - 1
-                )
-
-            reaction.reaction = reaction_type
-            reaction.save(update_fields=["reaction"])
-
             return Response(
-                {"message": "Reaction updated"},
-                status= status.HTTP_200_OK
+                {"detail": "Reaction already exists. Use PATCH to update."},
+                status=status.HTTP_409_CONFLICT
             )
         
         if reaction_type == "like":
             Story.objects.filter(id=story.id).update(likes=F("likes") + 1)
         else:
             Story.objects.filter(id=story.id).update(dislikes=F("dislikes") + 1)
-        
+
+        reaction.reaction = reaction_type
+        reaction.save(update_fields=["reaction"])
+
         return Response(
             {"message": "Reaction added"},
             status=status.HTTP_201_CREATED
         )
+    
+        
+    @transaction.atomic
+    def patch(self, request, story_id):
+        story = get_object_or_404(Story, id=story_id)
 
+        serializer = StoryReactionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        new_reaction = serializer.validated_data["reaction"]
+
+        try:
+            reaction = StoryReaction.objects.get(
+                user=request.user,
+                story=story
+            )
+        except StoryReaction.DoesNotExist:
+            return Response(
+                {"detail": "No existing reaction to update."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if reaction.reaction == new_reaction:
+            return Response(
+                {"detail": "Reaction is already set to this value."},
+                status=status.HTTP_200_OK
+            )
+
+        if new_reaction == "like":
+            Story.objects.filter(id=story.id).update(
+                likes=F("likes") + 1,
+                dislikes=F("dislikes") - 1
+            )
+        else:
+            Story.objects.filter(id=story.id).update(
+                likes=F("likes") - 1,
+                dislikes=F("dislikes") + 1
+            )
+
+        reaction.reaction = new_reaction
+        reaction.save(update_fields=["reaction"])
+
+        return Response(
+            {"message": "Reaction updated"},
+            status=status.HTTP_200_OK
+        )
 
     def delete(self, request, story_id):
         story = get_object_or_404(Story, id=story_id)
@@ -128,7 +150,4 @@ class StoryReactionView(APIView):
         reaction.delete()
 
 
-        return Response(
-            {"message": "Reaction deleted successfully"},
-            status=status.HTTP_204_NO_CONTENT
-        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
