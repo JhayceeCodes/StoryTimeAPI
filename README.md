@@ -45,7 +45,7 @@ You can explore and test all endpoints using the Postman collection below:
 
 ## AVAILABLE ENDPOINTS
 
-
+**Note:** Permissions are applied to some endpoints; authentication or role-based access may be required.
 ### Authentication Endpoints
 | Method | Endpoint                            | Description       |
 | ------ | ----------------------------------- | ----------------- |
@@ -58,14 +58,14 @@ You can explore and test all endpoints using the Postman collection below:
 | Method | Endpoint                            | Description       |
 | ------ | ----------------------------------- | ----------------- |
 | POST   | `/accounts/resend-email/`               | Resend verification email   |
-| GET   | `/accounts/verify/<uid>/<token>/`               | Verify email address   |
+| GET   | `/accounts/verify/{uid}/<token>/`               | Verify email address   |
 
 ### Password Reset
 
 | Method | Endpoint                            | Description       |
 | ------ | ----------------------------------- | ----------------- |
 | POST   | `/accounts/password-reset/`               | Request password reset email   |
-| GET   | `/accounts/reset/<uid>/<token>/`               | Confirm password reset  |
+| GET   | `/accounts/reset/{uid}/<token>/`               | Confirm password reset  |
 
 ### User & Profile
 | Method | Endpoint                            | Description       |
@@ -77,18 +77,34 @@ You can explore and test all endpoints using the Postman collection below:
 | Method | Endpoint                            | Description       |
 | ------ | ----------------------------------- | ----------------- |
 | POST   | `/accounts/register-author/`               | Create an author profile   |
-| GET/PATCH   | `/accounts/reset/<uid>/<token>/`               | Retrieve or update author information
+| GET/PATCH   | `/accounts/reset/{uid}/<token>/`               | Retrieve or update author information
   |
 
-`Each user can have only one author profile.
-Pen names are validated (letters only, 3–50 characters).`
+`Each user can have only one author profile.`
 
 ### Role Management
 
 | Method | Endpoint                            | Description       |
 | ------ | ----------------------------------- | ----------------- |
-| PATCH   | `/accounts/users/role`               | Update user role (Superuser only)   |
+| PATCH   | `/accounts/users/role/`               | Update user role (Superuser only)   |
 
+
+### Stories Management
+
+| Method | Endpoint                            | Description       |
+| ------ | ----------------------------------- | ----------------- |
+| POST   | `/api/stories/`               | Create story   |
+| GET   | `/api/stories/`               | List stories |
+| GET   | `/api/stories/{story_id}/`               | Fetch story details |
+| PUT/PATCH   | `/api/stories/{story_id}/`               | Full or partial story update |
+| DELETE  | `/api/stories/{story_id}/`               | Delete story   |
+
+### Stories Reactions
+| Method | Endpoint                            | Description       |
+| ------ | ----------------------------------- | ----------------- |
+| POST  | `/api/stories/{story_id}/reaction/`               | React to story (like or dislike)|
+| PATCH  | `/api/stories/{story_id}/reaction/`               | Update story reaction |
+| DELETE  | `/api/stories/{story_id}/reaction/`               | Delete story reaction |
 
 ### Supported roles:
 
