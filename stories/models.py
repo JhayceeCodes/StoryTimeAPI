@@ -11,7 +11,7 @@ class Story(models.Model):
         ('others', 'Others'),
     )
     genre = models.CharField(max_length=7, choices=GENRE_CHOICES)
-    context = models.TextField()
+    content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     likes = models.PositiveIntegerField(default=0)
     dislikes = models.PositiveIntegerField(default=0)
@@ -33,3 +33,11 @@ class StoryReaction(models.Model):
                 name="unique_user_story_reaction"
             )
         ]
+
+
+class Review(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    alias = models.CharField(max_length=50, null=True, blank=True)
+    story = models.ForeignKey(Story, on_delete=models.CASCADE, related_name="reviews")
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
