@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Story, StoryReaction
+from .models import Story, Reaction
 
 class StorySerializer(serializers.ModelSerializer):
     author = serializers.CharField(source="author.pen_name")
@@ -14,9 +14,9 @@ class StorySerializer(serializers.ModelSerializer):
         return value
 
 
-class StoryReactionSerializer(serializers.ModelSerializer):
+class ReactionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = StoryReaction
+        model = Reaction
         fields = ["reaction", "story", "updated_at"]
         read_only_fields = ["story", "updated_at"]
 
@@ -39,3 +39,7 @@ class StoryReactionSerializer(serializers.ModelSerializer):
                 "Reaction must be either 'like' or 'dislike'."
             )
         return value
+    
+
+class ReviewSerializer():
+    ...

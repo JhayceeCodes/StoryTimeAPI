@@ -16,7 +16,7 @@ class Story(models.Model):
     likes = models.PositiveIntegerField(default=0)
     dislikes = models.PositiveIntegerField(default=0)
 
-class StoryReaction(models.Model):
+class Reaction(models.Model):
     REACTION_CHOICES = (
         ('like', 'Like'), 
         ('dislike', 'Dislike'),

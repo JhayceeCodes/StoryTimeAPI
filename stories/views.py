@@ -6,8 +6,8 @@ from rest_framework import status
 from django.db.models import F
 from django.db import transaction
 from django.shortcuts import get_object_or_404
-from .serializers import StorySerializer, StoryReactionSerializer
-from .models import Story, StoryReaction
+from .serializers import StorySerializer, ReactionSerializer
+from .models import Story, Reaction
 from .permissions import IsAuthor, IsStoryOwner, CanDeleteStory
 
 """"
@@ -46,7 +46,7 @@ class StoryViewSet(ModelViewSet):
  -- however if the second-time reaction is different from the initial reaction, the previous is cancelled and its counter is reduced 
 """
 
-class StoryReactionView(APIView):
+class ReactionView(APIView):
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
@@ -54,11 +54,11 @@ class StoryReactionView(APIView):
 
         story = get_object_or_404(Story, id=story_id)
 
-        serializer = StoryReactionSerializer(data=request.data)
+        serializer = ReactionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         reaction_type = serializer.validated_data["reaction"]
 
-        reaction, created = StoryReaction.objects.get_or_create(
+        reaction, created = Reaction.objects.get_or_create(
             user=request.user,
             story=story,
             defaults={"reaction": reaction_type}
@@ -88,16 +88,16 @@ class StoryReactionView(APIView):
     def patch(self, request, story_id):
         story = get_object_or_404(Story, id=story_id)
 
-        serializer = StoryReactionSerializer(data=request.data)
+        serializer = ReactionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         new_reaction = serializer.validated_data["reaction"]
 
         try:
-            reaction = StoryReaction.objects.get(
+            reaction = Reaction.objects.get(
                 user=request.user,
                 story=story
             )
-        except StoryReaction.DoesNotExist:
+        except Reaction.DoesNotExist:
             return Response(
                 {"detail": "No existing reaction to update."},
                 status=status.HTTP_404_NOT_FOUND
@@ -151,3 +151,16 @@ class StoryReactionView(APIView):
 
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+
+class ReviewView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post():
+        ...
+
+    def patch():
+        ...
+
+    def delete():
+        ...
