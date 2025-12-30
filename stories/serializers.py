@@ -27,7 +27,7 @@ class ReactionSerializer(serializers.ModelSerializer):
         user = request.user if request else None
         story = attrs.get("story")
 
-        if StoryReaction.objects.filter(user= user, story=story).exists():
+        if Reaction.objects.filter(user= user, story=story).exists():
             raise serializers.ValidationError(
                 "You have already reacted to this story."
             )

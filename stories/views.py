@@ -132,11 +132,11 @@ class ReactionView(APIView):
         story = get_object_or_404(Story, id=story_id)
 
         try:
-            reaction = StoryReaction.objects.get(
+            reaction = Reaction.objects.get(
                 user=request.user,
                 story=story
             )
-        except StoryReaction.DoesNotExist:
+        except Reaction.DoesNotExist:
             return Response(
                 {"detail": "You have not reacted to this story"},
                 status=status.HTTP_404_NOT_FOUND
