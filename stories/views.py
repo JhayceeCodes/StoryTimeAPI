@@ -199,3 +199,13 @@ class ReviewViewSet(ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+    
+    def perform_update(self, serializer):
+        review = self.get_object()
+        time_limit = timedelta(minutes=30) 
+        if timezone.now() - review.created_at > time_limit:
+            return Response(
+                {"detail": "You can only update a review within 30 minutes of posting."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        serializer.save()
