@@ -32,7 +32,7 @@ class StoryViewSet(ModelViewSet):
 
     filterset_class = StoryFilter
 
-    search_fields = ["title", "context"]
+    search_fields = ["title", "content"]
     ordering_fields = ["created_at", "likes", "dislikes"]
     ordering = ["-created_at"]
 
