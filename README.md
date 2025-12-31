@@ -77,8 +77,7 @@ You can explore and test all endpoints using the Postman collection below:
 | Method | Endpoint                            | Description       |
 | ------ | ----------------------------------- | ----------------- |
 | POST   | `/accounts/register-author/`               | Create an author profile   |
-| GET/PATCH   | `/accounts/reset/{uid}/<token>/`               | Retrieve or update author information
-  |
+| GET/PATCH   | `/accounts/reset/{uid}/<token>/`               | Retrieve or update author information |
 
 `Each user can have only one author profile.`
 
