@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404
 from .serializers import StorySerializer, ReactionSerializer, ReviewSerializer
 from .models import Story, Reaction, Review
 from .permissions import IsAuthor, IsStoryOwner, CanDeleteStory, IsReviewOwner, CanDeleteReview
+from .pagination import ReviewsPagination
 
 """"
 - All users, authenticated or not, can read stories
@@ -156,6 +157,7 @@ class ReactionView(APIView):
 class ReviewViewSet(ModelViewSet):
     queryset =Review.objects.all().select_related("story")
     serializer_class = ReviewSerializer
+    pagination_class = ReviewsPagination
 
     def get_permissions(self):
         if self.action in ["list", "retrieve", "create"]:
