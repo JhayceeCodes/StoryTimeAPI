@@ -106,6 +106,16 @@ You can explore and test all endpoints using the Postman collection below:
 | PATCH  | `/api/stories/{story_id}/reaction/`               | Update story reaction |
 | DELETE  | `/api/stories/{story_id}/reaction/`               | Delete story reaction |
 
+### Stories Reviews
+| Method | Endpoint                            | Description       |
+| ------ | ----------------------------------- | ----------------- |
+| POST  | `/api/stories/{story_id}/reviews/`               | Add review to story|
+| GET  | `/api/stories/{story_id}/reviews/`               | Fetch all reviews for story|
+| GET  | `/api/stories/{story_id}/reviews/{review_id}/`               | Fetch review details |
+| PATCH  | `/api/stories/{story_id}/reviews/{review_id}/`               | Update review  |
+| DELETE  | `/api/stories/{story_id}/reviews/{review_id}/`               | Delete review |
+
+
 ### Supported roles:
 
 - user  ---| regular authenticated users, can read and write stories unless banned.
