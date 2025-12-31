@@ -192,10 +192,7 @@ You can explore and test all endpoints using the Postman collection below:
 
 ### Future Improvements
 
-- Story & chapter management
-
-- Stories reviews, likes and dislikes
-
+- Caching
 - Rate limiting
 
 
