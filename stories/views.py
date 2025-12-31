@@ -12,6 +12,7 @@ from .serializers import StorySerializer, ReactionSerializer, ReviewSerializer
 from .models import Story, Reaction, Review
 from .permissions import IsAuthor, IsStoryOwner, CanDeleteStory, IsReviewOwner, CanDeleteReview
 from .pagination import ReviewsPagination
+from .filters import StoryFilter
 
 """"
 - All users, authenticated or not, can read stories
@@ -29,23 +30,11 @@ class StoryViewSet(ModelViewSet):
         OrderingFilter,
     ]
 
-    filterset_fields = [
-        "genre",
-        "author",
-    ]
+    filterset_class = StoryFilter
 
-    search_fields = [
-        "title",
-        "content",
-    ]
-
-    ordering_fields = [
-        "created_at",
-        "likes",
-        "dislikes",
-    ]
+    search_fields = ["title", "context"]
+    ordering_fields = ["created_at", "likes", "dislikes"]
     ordering = ["-created_at"]
-    
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
