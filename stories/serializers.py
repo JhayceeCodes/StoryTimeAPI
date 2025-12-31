@@ -1,12 +1,13 @@
 from rest_framework import serializers
-from .models import Story, Reaction
+from .models import Story, Reaction, Review
 
 class StorySerializer(serializers.ModelSerializer):
     author = serializers.CharField(source="author.pen_name")
+    content = serializers.CharField(max_length=3000)
     class Meta:
         model = Story
         fields = "__all__"
-        read_only_fields = ["author", "created_at", "likes", "dislikes"]
+        read_only_fields = ["author", "content", "created_at", "likes", "dislikes"]
     
     def validate__title(self, value):
         if len(value.strip()) < 3:
@@ -29,7 +30,7 @@ class ReactionSerializer(serializers.ModelSerializer):
 
         if Reaction.objects.filter(user= user, story=story).exists():
             raise serializers.ValidationError(
-                "You have already reacted to this story."
+                "You have already reacted to this s..tory."
             )
         return attrs
 
@@ -41,5 +42,13 @@ class ReactionSerializer(serializers.ModelSerializer):
         return value
     
 
-class ReviewSerializer():
-    ...
+class ReviewSerializer(serializers.ModelSerializer):
+    content = serializers.CharField(max_length=500)
+    class Meta:
+        model = Review
+        fields = ["content", "story", "alias", "created_at"]
+        read_only_fields = ["created_at"]
+        
+
+
+   

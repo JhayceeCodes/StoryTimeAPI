@@ -6,9 +6,9 @@ from rest_framework import status
 from django.db.models import F
 from django.db import transaction
 from django.shortcuts import get_object_or_404
-from .serializers import StorySerializer, ReactionSerializer
-from .models import Story, Reaction
-from .permissions import IsAuthor, IsStoryOwner, CanDeleteStory
+from .serializers import StorySerializer, ReactionSerializer, ReviewSerializer
+from .models import Story, Reaction, Review
+from .permissions import IsAuthor, IsStoryOwner, CanDeleteStory, IsReviewOwner, CanDeleteReview
 
 """"
 - All users, authenticated or not, can read stories
@@ -17,7 +17,7 @@ from .permissions import IsAuthor, IsStoryOwner, CanDeleteStory
 - Delete can be done by the story author, moderator, or admin
 """
 class StoryViewSet(ModelViewSet):
-    queryset =Story.objects.all().select_related("author").order_by("-created_at")
+    queryset =Story.objects.all().select_related("author")
     serializer_class = StorySerializer
 
     def get_permissions(self):
@@ -153,14 +153,21 @@ class ReactionView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
     
 
-class ReviewView(APIView):
-    permission_classes = [IsAuthenticated]
+class ReviewViewSet(ModelViewSet):
+    queryset =Review.objects.all().select_related("story")
+    serializer_class = ReviewSerializer
 
-    def post():
-        ...
+    def get_permissions(self):
+        if self.action in ["list", "retrieve", "create"]:
+            return [IsAuthenticated()]
 
-    def patch():
-        ...
+        if self.action == "partial_update":
+            return [IsReviewOwner()]
+        
+        if self.action == "destroy":
+            return [CanDeleteReview()]
 
-    def delete():
-        ...
+        return [IsAuthenticated()]
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)

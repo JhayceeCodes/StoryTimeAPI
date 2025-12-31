@@ -24,4 +24,12 @@ class CanDeleteStory(BasePermission):
             return True
 
         return False
+    
+class IsReviewOwner(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return obj.user == request.user
+
+class CanDeleteReview(BasePermission):
+    def has_permission(self, request, view):
+        return getattr(request.user, "role", None) in ("superuser", "admin", "moderator")
         
