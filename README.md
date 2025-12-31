@@ -154,6 +154,11 @@ You can explore and test all endpoints using the Postman collection below:
 |   |-- admin.py
 |   |-- apps.py
 |   |-- migrations
+|   |   |-- 0001_initial.py
+|   |   |-- 0002_alter_user_email.py
+|   |   |-- 0003_author.py
+|   |   |-- 0004_user_role.py
+|   |   `-- __init__.py
 |   |-- models.py
 |   |-- permissions.py
 |   |-- serializers.py
@@ -169,12 +174,33 @@ You can explore and test all endpoints using the Postman collection below:
 |   |-- admin.py
 |   |-- apps.py
 |   |-- migrations
+|   |   `-- __init__.py
 |   |-- models.py
 |   |-- tests.py
 |   |-- utils.py
 |   `-- views.py
 |-- manage.py
-`-- requirements.txt
+|-- requirements.txt
+|-- stories
+|   |-- __init__.py
+|   |-- admin.py
+|   |-- apps.py
+|   |-- filters.py
+|   |-- migrations
+|   |   |-- 0001_initial.py
+|   |   |-- 0002_alter_story_genre_storyreaction.py
+|   |   |-- 0003_review.py
+|   |   |-- 0004_rename_context_review_content_and_more.py
+|   |   |-- 0005_rename_storyreaction_reaction_alter_review_alias.py
+|   |   |-- 0006_alter_review_alias_alter_review_content_and_more.py
+|   |   `-- __init__.py
+|   |-- models.py
+|   |-- pagination.py
+|   |-- permissions.py
+|   |-- serializers.py
+|   |-- tests.py
+|   |-- urls.py
+|   `-- views.py
 ```
 
 ▶️ Running Locally
