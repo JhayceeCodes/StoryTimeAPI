@@ -32,4 +32,6 @@ class IsReviewOwner(BasePermission):
 class CanDeleteReview(BasePermission):
     def has_permission(self, request, view):
         return getattr(request.user, "role", None) in ("superuser", "admin", "moderator")
+
+
         

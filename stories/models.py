@@ -15,6 +15,8 @@ class Story(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     likes = models.PositiveIntegerField(default=0)
     dislikes = models.PositiveIntegerField(default=0)
+    average_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0)
+    total_ratings = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ["-created_at"]
@@ -64,3 +66,24 @@ class Review(models.Model):
         ]
 
         ordering = ["-created_at"]
+
+
+class Rating(models.Model):
+    RATING_CHOICES = (
+        (1, "1"),
+        (2, "2"),
+        (3, "3"),
+        (4, "4"),
+        (5, "5")
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    story = models.ForeignKey(Story, on_delete=models.CASCADE, related_name="ratings")
+    rating = models.PositiveSmallIntegerField(choices=RATING_CHOICES)
+
+    class Meta:
+        constraints =[
+            models.UniqueConstraint(
+                fields=["user", "story"],
+                name="unique_rating_per_story_per_user"
+            )   
+        ]

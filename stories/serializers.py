@@ -1,38 +1,28 @@
 from rest_framework import serializers
-from .models import Story, Reaction, Review
+from .models import Story, Reaction, Review, Rating
 
 class StorySerializer(serializers.ModelSerializer):
-    author = serializers.CharField(source="author.pen_name")
-    content = serializers.CharField(max_length=3000)
+    author = serializers.CharField(source="author.pen_name", read_only=True)
     class Meta:
         model = Story
-        fields = "__all__"
-        read_only_fields = ["author", "content", "created_at", "likes", "dislikes"]
+        fields = ["id", "title", "content", "author", "genre", "likes", "dislikes", "average_rating", "total_ratings", "created_at"]
+        read_only_fields = ["author", "created_at", "likes", "dislikes", "average_rating", "total_ratings"]
     
-    def validate__title(self, value):
+    def validate_title(self, value):
         if len(value.strip()) < 3:
             raise serializers.ValidationError("Title must be at least three characters long.")
+        return value
+    
+    def validate_content(self, value):
+        if len(value.strip()) < 10:
+            raise serializers.ValidationError("Content must be at least 10 characters long.")
         return value
 
 
 class ReactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reaction
-        fields = ["reaction", "story", "updated_at"]
-        read_only_fields = ["story", "updated_at"]
-
-
-    
-    def validate(self, attrs):
-        request = self.context.get("request")
-        user = request.user if request else None
-        story = attrs.get("story")
-
-        if Reaction.objects.filter(user= user, story=story).exists():
-            raise serializers.ValidationError(
-                "You have already reacted to this s..tory."
-            )
-        return attrs
+        fields = ["reaction"]
 
     def validate_reaction(self, value):
         if value not in ("like", "dislike"):
@@ -46,9 +36,18 @@ class ReviewSerializer(serializers.ModelSerializer):
     content = serializers.CharField(max_length=500)
     class Meta:
         model = Review
-        fields = ["content", "story", "alias", "created_at"]
-        read_only_fields = ["created_at"]
-        
+        fields = ["story", "content", "alias", "created_at"]
+        read_only_fields = ["story", "created_at"]
+
+
+class RatingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Rating
+        fields = ["rating"]
+
+    
+
+    
 
 
    

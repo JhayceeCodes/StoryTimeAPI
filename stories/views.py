@@ -8,8 +8,9 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from django.db.models import F
 from django.db import transaction
 from django.shortcuts import get_object_or_404
-from .serializers import StorySerializer, ReactionSerializer, ReviewSerializer
-from .models import Story, Reaction, Review
+from django.db.models import Avg, Count
+from .serializers import StorySerializer, ReactionSerializer, ReviewSerializer, RatingSerializer
+from .models import Story, Reaction, Review, Rating
 from .permissions import IsAuthor, IsStoryOwner, CanDeleteStory, IsReviewOwner, CanDeleteReview
 from .pagination import ReviewsPagination
 from .filters import StoryFilter
@@ -43,7 +44,7 @@ class StoryViewSet(ModelViewSet):
         if self.action == "create":
             return [IsAuthor()]
 
-        if self.action in ["update", "partial_update"]:
+        if self.action == "partial_update":
             return [IsStoryOwner()]
 
         if self.action == "destroy":
@@ -53,6 +54,13 @@ class StoryViewSet(ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(author=self.request.user.author)
+    
+    def update(self, request, *args, **kwargs):
+        return Response(
+            {"detail": "Use PATCH to update a story."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+
     
 
 """
@@ -91,8 +99,7 @@ class ReactionView(APIView):
         else:
             Story.objects.filter(id=story.id).update(dislikes=F("dislikes") + 1)
 
-        reaction.reaction = reaction_type
-        reaction.save(update_fields=["reaction"])
+        
 
         return Response(
             {"message": "Reaction added"},
@@ -140,10 +147,11 @@ class ReactionView(APIView):
         reaction.save(update_fields=["reaction"])
 
         return Response(
-            {"message": "Reaction updated"},
+            {"message": "Reaction updated."},
             status=status.HTTP_200_OK
         )
 
+    @transaction.atomic
     def delete(self, request, story_id):
         story = get_object_or_404(Story, id=story_id)
 
@@ -154,14 +162,14 @@ class ReactionView(APIView):
             )
         except Reaction.DoesNotExist:
             return Response(
-                {"detail": "You have not reacted to this story"},
+                {"detail": "Reaction not found."},
                 status=status.HTTP_404_NOT_FOUND
             )
         
         if reaction.reaction == "like":
             Story.objects.filter(id=story.id).update(likes=F("likes") - 1)
         else:
-            Story.objects.filter(id=story.id).update(likes=F("dislikes") - 1)
+            Story.objects.filter(id=story.id).update(delete=F("dislikes") - 1)
 
         reaction.delete()
 
@@ -189,12 +197,104 @@ class ReviewViewSet(ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
     
-    def perform_update(self, serializer):
+    def partial_update(self, request, *args, **kwargs):
         review = self.get_object()
-        time_limit = timedelta(minutes=30) 
-        if timezone.now() - review.created_at > time_limit:
+        if timezone.now() - review.created_at > timedelta(minutes=30):
             return Response(
-                {"detail": "You can only update a review within 30 minutes of posting."},
+                {"detail": "You can only update a review within 30 minutes."},
                 status=status.HTTP_403_FORBIDDEN
             )
-        serializer.save()
+        return super().partial_update(request, *args, **kwargs)
+
+
+class RatingView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, story_id):
+        story = get_object_or_404(Story, id=story_id)
+
+        if request.user == story.author.user:
+            return Response(
+                {"detail": "Authors cannot rate their own story"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+        serializer = RatingSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if Rating.objects.filter(user=request.user, story=story).exists():
+            return Response(
+                {"detail": "Rating already exists. Use PATCH to update."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        Rating.objects.create(
+            user=request.user,
+            story=story,
+            rating=serializer.validated_data["rating"]
+        )
+
+        self._update_story_rating(story)
+
+        return Response(
+            {"message": "Rating added successfully."},
+            status=status.HTTP_201_CREATED
+        )
+
+    @transaction.atomic
+    def patch(self, request, story_id):
+        story = get_object_or_404(Story, id=story_id)
+
+        serializer = RatingSerializer(
+            data=request.data,
+            context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+
+        updated = Rating.objects.filter(
+            user=request.user,
+            story=story
+        ).update(rating=serializer.validated_data["rating"])
+
+        if not updated:
+            return Response(
+                {"detail": "Rating not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        self._update_story_rating(story)
+
+        return Response(
+            {"message": "Rating updated successfully."},
+            status=status.HTTP_200_OK
+        )
+
+    @transaction.atomic
+    def delete(self, request, story_id):
+        story = get_object_or_404(Story, id=story_id)
+
+        try:
+            rating = Rating.objects.get(user=request.user, story=story)
+            rating.delete()
+
+            self._update_story_rating(story)
+
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        except Rating.DoesNotExist:
+            return Response(
+                {"detail": "Rating not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    def _update_story_rating(self, story):
+        agg = Rating.objects.filter(story=story).aggregate(
+            avg=Avg("rating"),
+            count=Count("id")
+        )
+        Story.objects.filter(id=story.id).update(
+            total_ratings=agg["count"] or 0,
+            average_rating=agg["avg"] or 0
+        )
