@@ -134,14 +134,14 @@ class PasswordResetConfirmView(APIView):
 
 class AuthorView(generics.RetrieveUpdateAPIView):
     serializer_class = AuthorSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsVerified]
 
     def get_object(self):
         return self.request.user.author
 
 class RegisterAuthorView(generics.CreateAPIView):
     serializer_class = AuthorSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVerified]
+    permission_classes = [IsVerified]
 
     def create(self, request, *args, **kwargs):
         if hasattr(request.user, "author"):

@@ -11,6 +11,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Avg, Count
 from datetime import timedelta
 from django.utils import timezone
+from accounts.permissions import IsVerified
 from .serializers import StorySerializer, ReactionSerializer, ReviewSerializer, RatingSerializer
 from .models import Story, Reaction, Review, Rating
 from .permissions import IsAuthor, IsStoryOwner, CanDeleteStory, IsReviewOwner, CanDeleteReview
@@ -190,7 +191,7 @@ class ReviewViewSet(ModelViewSet):
 
     def get_permissions(self):
         if self.action in ["list", "retrieve", "create"]:
-            return [IsAuthenticated()]
+            return [IsVerified()]
         if self.action == "partial_update":
             return [IsReviewOwner()]
         if self.action == "destroy":
@@ -225,7 +226,7 @@ class ReviewViewSet(ModelViewSet):
 
 
 class RatingView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsVerified]
 
     @transaction.atomic
     def post(self, request, story_id):
