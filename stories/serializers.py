@@ -33,12 +33,28 @@ class ReactionSerializer(serializers.ModelSerializer):
     
 
 class ReviewSerializer(serializers.ModelSerializer):
-    content = serializers.CharField(max_length=500)
+    story = serializers.CharField(source="story.title", read_only=True)
     class Meta:
         model = Review
-        fields = ["story", "content", "alias", "created_at"]
+        fields = ["id", "story", "content", "alias", "created_at"]
         read_only_fields = ["story", "created_at"]
+    
+    def validate(self, attrs):
+        user = self.context["request"].user
+        story = self.context.get("story")
+        alias = attrs.get("alias") or user.username
 
+        if Review.objects.filter(story=story, alias=alias).exists():
+            raise serializers.ValidationError(
+                {"alias": "This alias already exists for this story."}
+            )
+
+        if Review.objects.filter(story=story, user=user).exists():
+            raise serializers.ValidationError(
+                {"user": "You have already reviewed this story."}
+            )
+
+        return attrs
 
 class RatingSerializer(serializers.ModelSerializer):
     class Meta:
