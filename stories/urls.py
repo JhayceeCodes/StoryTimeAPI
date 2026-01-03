@@ -1,6 +1,6 @@
 from rest_framework_nested import routers
 from django.urls import path
-from .views import StoryViewSet, ReactionView, ReviewViewSet
+from .views import StoryViewSet, ReactionView, ReviewViewSet, RatingView
 
 
 router = routers.DefaultRouter()
@@ -13,6 +13,7 @@ stories_router.register("reviews", ReviewViewSet, basename="story-reviews")
 
 urlpatterns = router.urls + stories_router.urls + [
     path("stories/<int:story_id>/reaction/", ReactionView.as_view(), name="story-reaction"),
+    path("stories/<int:story_id>/rating/", RatingView.as_view(), name="story-ratings"),
 ]
 
 
