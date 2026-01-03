@@ -9,6 +9,8 @@ from django.db.models import F
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.db.models import Avg, Count
+from datetime import timedelta
+from django.utils import timezone
 from .serializers import StorySerializer, ReactionSerializer, ReviewSerializer, RatingSerializer
 from .models import Story, Reaction, Review, Rating
 from .permissions import IsAuthor, IsStoryOwner, CanDeleteStory, IsReviewOwner, CanDeleteReview
@@ -55,7 +57,7 @@ class StoryViewSet(ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user.author)
     
-    def update(self, request, *args, **kwargs):
+    def put(self, request, *args, **kwargs):
         return Response(
             {"detail": "Use PATCH to update a story."},
             status=status.HTTP_405_METHOD_NOT_ALLOWED
@@ -82,7 +84,7 @@ class ReactionView(APIView):
         serializer.is_valid(raise_exception=True)
         reaction_type = serializer.validated_data["reaction"]
 
-        reaction, created = Reaction.objects.get_or_create(
+        _ , created = Reaction.objects.get_or_create(
             user=request.user,
             story=story,
             defaults={"reaction": reaction_type}
@@ -178,33 +180,48 @@ class ReactionView(APIView):
     
 
 class ReviewViewSet(ModelViewSet):
-    queryset =Review.objects.all().select_related("story")
     serializer_class = ReviewSerializer
     pagination_class = ReviewsPagination
+
+    def get_queryset(self):
+        return Review.objects.filter(
+            story_id=self.kwargs.get("story_pk")
+        ).select_related("story")
 
     def get_permissions(self):
         if self.action in ["list", "retrieve", "create"]:
             return [IsAuthenticated()]
-
         if self.action == "partial_update":
             return [IsReviewOwner()]
-        
         if self.action == "destroy":
-            return [CanDeleteReview()]
-
+            return [CanDeleteReview() or IsReviewOwner()]
         return [IsAuthenticated()]
-    
+
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-    
+        story = get_object_or_404(Story, id=self.kwargs.get("story_pk"))
+        serializer = serializer.__class__(
+            data=self.request.data,
+            context={**self.get_serializer_context(), "story": story}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=self.request.user, story=story)
+
+
     def partial_update(self, request, *args, **kwargs):
         review = self.get_object()
         if timezone.now() - review.created_at > timedelta(minutes=30):
             return Response(
-                {"detail": "You can only update a review within 30 minutes."},
+                {"detail": "User can only update a review within 30 minutes."},
                 status=status.HTTP_403_FORBIDDEN
             )
         return super().partial_update(request, *args, **kwargs)
+    
+    def put(self, request, *args, **kwargs):
+        return Response(
+            {"detail": "Use PATCH to update a story."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+
 
 
 class RatingView(APIView):
