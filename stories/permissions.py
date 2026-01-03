@@ -30,8 +30,14 @@ class IsReviewOwner(BasePermission):
         return obj.user == request.user
 
 class CanDeleteReview(BasePermission):
-    def has_permission(self, request, view):
-        return getattr(request.user, "role", None) in ("superuser", "admin", "moderator")
+    def has_object_permission(self, request, view, obj):
+        if obj.user == request.user:
+            return True
+        
+        if getattr(request.user, "role", None) in ("superuser", "admin", "moderator"):
+            return True
+
+        return False
 
 
         
