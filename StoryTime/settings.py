@@ -156,6 +156,14 @@ SIMPLE_JWT = {
 }
 
 
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-storytime-cache",
+    }
+}
+
+
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 
 LOGGING = {
@@ -175,3 +183,6 @@ LOGGING = {
 #CELERY
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', "redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = os.getenv('CELERY_RESEND_URL', "redis://localhost:6379/0")
+
+
+

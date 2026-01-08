@@ -9,6 +9,7 @@ from django.db.models import F
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.db.models import Avg, Count
+from django.core.cache import cache
 from datetime import timedelta
 from django.utils import timezone
 from accounts.permissions import IsVerified
@@ -55,9 +56,27 @@ class StoryViewSet(ModelViewSet):
 
         return [IsAuthenticated()]
     
+
+    def list(self, request, *args, **kwargs):
+        cache_key = "stories:list"
+        data = cache.get(cache_key)
+
+        if data:
+            return Response(data)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, 300)
+        return response
+    
     def perform_create(self, serializer):
         serializer.save(author=self.request.user.author)
-    
+        cache.delete("stories:list")
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        cache.delete("stories:list")
+        cache.delete(f"story:{instance.id}")
+
     def put(self, request, *args, **kwargs):
         return Response(
             {"detail": "Use PATCH to update a story."},
