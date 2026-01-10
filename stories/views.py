@@ -10,6 +10,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.db.models import Avg, Count
 from django.core.cache import cache
+from django_ratelimit.decorators import ratelimit
 from datetime import timedelta
 from django.utils import timezone
 from accounts.permissions import IsVerified
@@ -56,7 +57,7 @@ class StoryViewSet(ModelViewSet):
 
         return [IsAuthenticated()]
     
-
+    
     def list(self, request, *args, **kwargs):
         cache_key = "stories:list"
         data = cache.get(cache_key)
