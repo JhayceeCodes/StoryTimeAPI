@@ -153,9 +153,37 @@ REST_FRAMEWORK = {
     ],
 
     'DEFAULT_THROTTLE_RATES': {
-        'user': '100/hour',  
-        'anon': '20/minute', 
-    }
+        # Global
+        "user": "500/hour",
+        "anon": "100/hour",
+
+        # Stories
+        "story_anon": "5/min",
+        "story_user": "300/hour",
+        "story_create": "10/hour",
+
+        # Reactions
+        "reaction_burst": "5/min",
+        "reaction_sustained": "50/hour",
+
+        # Ratings
+        "rating_burst": "2/min",
+        "rating_sustained": "10/hour",
+
+        # Reviews
+        "review_create": "5/hour",
+        "review_delete": "50/hour",
+
+        # Moderation
+        "story_delete": "20/hour",
+
+        # Auth 
+        "login": "5/min",
+        "password_reset": "3/hour",
+        "email_verify": "5/hour",
+    },
+
+    "EXCEPTION_HANDLER": "core.exception_handler.custom_exception_handler"
 }
 
 SIMPLE_JWT = {

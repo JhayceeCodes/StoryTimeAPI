@@ -5,12 +5,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from django.db.models import F
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.db.models import Avg, Count
 from django.core.cache import cache
-from django_ratelimit.decorators import ratelimit
 from datetime import timedelta
 from django.utils import timezone
 from accounts.permissions import IsVerified
@@ -18,7 +18,19 @@ from .serializers import StorySerializer, ReactionSerializer, ReviewSerializer, 
 from .models import Story, Reaction, Review, Rating
 from .permissions import IsAuthor, IsStoryOwner, CanDeleteStory, IsReviewOwner, CanDeleteReview
 from .pagination import ReviewsPagination
-from .filters import StoryFilter
+from .filters import StoryFilter 
+from .throttles import (
+    StoryAnonThrottle,
+    StoryCreateThrottle,
+    StoryUserThrottle,
+    ReactionBurstThrottle,
+    ReactionSustainedThrottle,
+    ReviewCreateThrottle,
+    ReviewDeleteThrottle,
+    StoryDeleteThrottle,
+    RatingBurstThrottle,
+    RatingSustainedThrottle,
+)
 
 """"
 - All users, authenticated or not, can read stories
@@ -41,6 +53,18 @@ class StoryViewSet(ModelViewSet):
     search_fields = ["title", "content"]
     ordering_fields = ["created_at", "likes", "dislikes"]
     ordering = ["-created_at"]
+
+    def get_throttles(self):
+        if self.action in ["list", "retrieve"]:
+            return [StoryAnonThrottle(), StoryUserThrottle()]
+
+        if self.action == "create":
+            return [StoryCreateThrottle()]
+
+        if self.action == "destroy":
+            return [StoryDeleteThrottle()]
+
+        return [UserRateThrottle()]
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -94,7 +118,9 @@ class StoryViewSet(ModelViewSet):
 """
 
 class ReactionView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  
+    throttle_classes = [ReactionSustainedThrottle, ReactionBurstThrottle]
+
 
     @transaction.atomic
     def post(self, request, story_id):
@@ -204,6 +230,13 @@ class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
     pagination_class = ReviewsPagination
 
+    def get_throttles(self):
+        if self.action == "create":
+            return [ReviewCreateThrottle()]
+        
+        if self.action == "destroy":
+            return [ReviewDeleteThrottle()]
+
     def get_queryset(self):
         return Review.objects.filter(
             story_id=self.kwargs.get("story_pk")
@@ -247,6 +280,7 @@ class ReviewViewSet(ModelViewSet):
 
 class RatingView(APIView):
     permission_classes = [IsVerified]
+    throttle_classes = [RatingBurstThrottle, RatingSustainedThrottle]
 
     @transaction.atomic
     def post(self, request, story_id):

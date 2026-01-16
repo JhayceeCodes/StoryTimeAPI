@@ -11,6 +11,7 @@ from .tasks import send_password_reset_email_task, send_verification_email_task
 from .utils import generate_token, verify_token
 from .models import  User
 from .permissions import IsVerified, IsSuperuser
+from .throttles import PasswordResetThrottle, LoginThrottle, EmailVerifyThrottle
 
 frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:8000")
 
@@ -51,6 +52,8 @@ class SendVerificationEmailView(APIView):
         
 
 class VerifyEmailView(APIView):
+    throttle_classes = [EmailVerifyThrottle]
+
     def get(self, request, uid, token):
         user = verify_token(uid, token)
 
@@ -98,6 +101,7 @@ class RequestPasswordResetView(APIView):
     
 class PasswordResetConfirmView(APIView):
     permission_classes = []
+    throttle_classes = [PasswordResetThrottle]
 
     def post(self, request, uid, token):
         user = verify_token(uid, token)
@@ -159,6 +163,7 @@ class RegisterAuthorView(generics.CreateAPIView):
 
 class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer
+    throttle_classes = [LoginThrottle]
 
 class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
