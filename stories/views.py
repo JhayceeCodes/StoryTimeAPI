@@ -83,7 +83,7 @@ class StoryViewSet(ModelViewSet):
     
     
     def list(self, request, *args, **kwargs):
-        cache_key = "stories:list"
+        cache_key = f"stories:list:{request.query_params.urlencode()}"
         data = cache.get(cache_key)
 
         if data:
@@ -95,7 +95,7 @@ class StoryViewSet(ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(author=self.request.user.author)
-        cache.delete("stories:list")
+        cache.delete("stories:list*")
 
     def perform_update(self, serializer):
         instance = serializer.save()
