@@ -21,6 +21,10 @@ It provides secure authentication, email verification, role-based access control
 
 - Protected endpoints for verified users only
 
+- Stories Caching mechanism (Cache Aside)
+
+- Rate limiting 
+
 
 ## Tech Stack
 
@@ -149,55 +153,6 @@ You can explore and test all endpoints using the Postman collection below:
 
 | Passwords are securely hashed
 
-### Project Structure
-```text
-|-- StoryTime
-|   |-- __init__.py
-|   |-- asgi.py
-|   |-- celery.py
-|   |-- settings.py
-|   |-- urls.py
-|   `-- wsgi.py
-|-- accounts
-|   |-- __init__.py
-|   |-- admin.py
-|   |-- apps.py
-|   |-- migrations
-|   |-- models.py
-|   |-- permissions.py
-|   |-- serializers.py
-|   |-- tasks.py
-|   |-- templates
-|   |   `-- emails
-|   |-- tests.py
-|   |-- urls.py
-|   |-- utils.py
-|   `-- views.py
-|-- core
-|   |-- __init__.py
-|   |-- admin.py
-|   |-- apps.py
-|   |-- migrations
-|   |-- models.py
-|   |-- tests.py
-|   |-- utils.py
-|   `-- views.py
-|-- manage.py
-|-- requirements.txt
-|-- stories
-|   |-- __init__.py
-|   |-- admin.py
-|   |-- apps.py
-|   |-- filters.py
-|   |-- migrations
-|   |-- models.py
-|   |-- pagination.py
-|   |-- permissions.py
-|   |-- serializers.py
-|   |-- tests.py
-|   |-- urls.py
-|   `-- views.py
-```
 
 ▶️ Running Locally
 ```bash
@@ -213,8 +168,9 @@ You can explore and test all endpoints using the Postman collection below:
 
 ### Future Improvements
 
-- Caching
-- Rate limiting
+- Integration of chapters
+- Bookmark system
+- Stories cover photo
 
 
 ### Contributing
