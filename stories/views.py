@@ -99,7 +99,7 @@ class StoryViewSet(ModelViewSet):
 
     def perform_update(self, serializer):
         instance = serializer.save()
-        cache.delete("stories:list")
+        cache.delete("stories:list*")
         cache.delete(f"story:{instance.id}")
 
     def put(self, request, *args, **kwargs):
