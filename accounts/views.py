@@ -80,6 +80,8 @@ class VerifyEmailView(APIView):
 
     
 class RequestPasswordResetView(APIView):
+    throttle_classes = [PasswordResetThrottle]
+
     def post(self, request):
         email = request.data.get('email')
         if not email:
@@ -100,7 +102,6 @@ class RequestPasswordResetView(APIView):
 
     
 class PasswordResetConfirmView(APIView):
-    permission_classes = []
     throttle_classes = [PasswordResetThrottle]
 
     def post(self, request, uid, token):
