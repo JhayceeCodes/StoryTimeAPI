@@ -16,9 +16,6 @@ load_dotenv()
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -148,8 +145,8 @@ REST_FRAMEWORK = {
     ],
 
     "DEFAULT_THROTTLE_CLASSES": [
-     'rest_framework.throttling.UserRateThrottle', 
-        'rest_framework.throttling.AnonRateThrottle', 
+     'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.AnonRateThrottle',
     ],
 
     'DEFAULT_THROTTLE_RATES': {
@@ -177,7 +174,7 @@ REST_FRAMEWORK = {
         # Moderation
         "story_delete": "20/hour",
 
-        # Auth 
+        # Auth
         "login": "5/min",
         "password_reset": "3/hour",
         "email_verify": "5/hour",
