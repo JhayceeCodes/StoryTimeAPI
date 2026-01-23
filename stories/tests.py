@@ -1,3 +1,8 @@
-from django.test import TestCase
+import pytest
+from .models import Story
 
-# Create your tests here.
+@pytest.mark.django_db
+class TestStories:
+    def test_fetch_story(self):
+        stories = Story.objects.all()
+        assert stories == {}
