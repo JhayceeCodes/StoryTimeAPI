@@ -1,6 +1,6 @@
 from re import search
 from django.core.cache import cache
-import pytest
+import pytest, time
 from django.urls import reverse
 from rest_framework import status
 from .models import Story
@@ -78,7 +78,42 @@ class TestStoryViewset:
         assert titles1 == []
         assert titles2 == ["Jungle"]
 
+    #TESTING CACHING
+    # METHOD A --- Checking no. of database hit before and after(which should be zero) caching
+    def test_stories_list_uses_cache(
+            self,
+            api_client,
+            create_story_api,
+            story_data,
+            django_assert_num_queries,
+    ):
+        cache.clear()
 
+        create_story_api({"title": "Story A", **story_data})
+
+        # First request ---  DB hit (hits both story and author table)
+        with django_assert_num_queries(2):
+            api_client.get(reverse("story-list"))
+
+        # Second request --- cached (no DB hit)
+        with django_assert_num_queries(0):
+            api_client.get(reverse("story-list"))
+
+    # METHOD B --- Checking time difference (Cache speed)
+    def test_stories_list_faster_with_cache(self, api_client):
+        cache.clear()
+        url = reverse("story-list")
+
+        start = time.monotonic()
+        api_client.get(url)
+        first_time = time.monotonic() - start
+
+        start = time.monotonic()
+        api_client.get(url)
+        second_time = time.monotonic() - start
+
+        print(f"First: {first_time:.4f}s | Cached: {second_time:.4f}s") #confirm time difference
+        assert second_time < first_time
 
 
 
