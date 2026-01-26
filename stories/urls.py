@@ -1,3 +1,5 @@
+
+
 from rest_framework_nested import routers
 from django.urls import path
 from .views import StoryViewSet, ReactionView, ReviewViewSet, RatingView
@@ -5,7 +7,7 @@ from .views import StoryViewSet, ReactionView, ReviewViewSet, RatingView
 
 router = routers.DefaultRouter()
 
-router.register("stories", StoryViewSet, basename="stories")
+router.register("stories", StoryViewSet, basename="story")
 
 stories_router = routers.NestedDefaultRouter(router, "stories", lookup="story")
 stories_router.register("reviews", ReviewViewSet, basename="story-reviews")

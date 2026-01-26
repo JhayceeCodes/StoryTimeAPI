@@ -16,7 +16,7 @@ class TestRegisterView:
         """Test successful user registration"""
         mock_generate_token.return_value = ('test-uid', 'test-token')
 
-        url = reverse('register')  # Adjust to your URL name
+        url = reverse('register')
         response = api_client.post(url, user_data, format='json')
 
         assert response.status_code == status.HTTP_201_CREATED
@@ -36,14 +36,14 @@ class TestRegisterView:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    # def test_register_invalid_password(self, api_client, user_data):
-    #     """Test registration with weak password"""
-    #     user_data['password'] = '123'
-    #
-    #     url = reverse('register')
-    #     response = api_client.post(url, user_data, format='json')
-    #
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
+    def test_register_invalid_password(self, api_client, user_data):
+        """Test registration with weak password"""
+        user_data['password'] = '123'
+
+        url = reverse('register')
+        response = api_client.post(url, user_data, format='json')
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_register_missing_fields(self, api_client):
         """Test registration with missing required fields"""
@@ -61,7 +61,7 @@ class TestVerifyEmailView:
         user = create_user(is_verified=False)
         mock_verify_token.return_value = user
 
-        url = reverse('verify_email', kwargs={'uid': 'test-uid', 'token': 'test-token'})
+        url = reverse('verify-email', kwargs={'uid': 'test-uid', 'token': 'test-token'})
         response = api_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -73,7 +73,7 @@ class TestVerifyEmailView:
         """Test email verification with invalid token"""
         mock_verify_token.return_value = None
 
-        url = reverse('verify_email', kwargs={'uid': 'invalid-uid', 'token': 'invalid-token'})
+        url = reverse('verify-email', kwargs={'uid': 'invalid-uid', 'token': 'invalid-token'})
         response = api_client.get(url)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -83,7 +83,7 @@ class TestVerifyEmailView:
         """Test verification of already verified email"""
         mock_verify_token.return_value = verified_user
 
-        url = reverse('verify_email', kwargs={'uid': 'test-uid', 'token': 'test-token'})
+        url = reverse('verify-email', kwargs={'uid': 'test-uid', 'token': 'test-token'})
         response = api_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -102,7 +102,7 @@ class TestSendVerificationEmailView:
         api_client.force_authenticate(user=user)
         mock_generate_token.return_value = ('test-uid', 'test-token')
 
-        url = reverse('resend_email')
+        url = reverse('resend-email')
         response = api_client.post(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -110,7 +110,7 @@ class TestSendVerificationEmailView:
 
     def test_send_verification_email_already_verified(self, authenticated_client):
         """Test sending verification email when already verified"""
-        url = reverse('resend_email')
+        url = reverse('resend-email')
         response = authenticated_client.post(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -118,7 +118,7 @@ class TestSendVerificationEmailView:
 
     def test_send_verification_email_unauthenticated(self, api_client):
         """Test sending verification email without authentication"""
-        url = reverse('resend_email')
+        url = reverse('resend-email')
         response = api_client.post(url)
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
@@ -133,7 +133,7 @@ class TestRequestPasswordResetView:
         """Test requesting password reset for existing user"""
         mock_generate_token.return_value = ('test-uid', 'test-token')
 
-        url = reverse('request_password_reset')
+        url = reverse('request-password-reset')
         response = api_client.post(url, {'email': verified_user.email}, format='json')
 
         assert response.status_code == status.HTTP_200_OK
@@ -141,7 +141,7 @@ class TestRequestPasswordResetView:
 
     def test_request_password_reset_nonexistent_user(self, api_client):
         """Test requesting password reset for non-existent user"""
-        url = reverse('request_password_reset')
+        url = reverse('request-password-reset')
         response = api_client.post(url, {'email': 'nonexistent@example.com'}, format='json')
 
         # Should return 200 to prevent email enumeration
@@ -149,7 +149,7 @@ class TestRequestPasswordResetView:
 
     def test_request_password_reset_missing_email(self, api_client):
         """Test requesting password reset without email"""
-        url = reverse('request_password_reset')
+        url = reverse('request-password-reset')
         response = api_client.post(url, {}, format='json')
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -162,7 +162,7 @@ class TestPasswordResetConfirmView:
         """Test successful password reset"""
         mock_verify_token.return_value = verified_user
 
-        url = reverse('confirm_password_reset', kwargs={'uid': 'test-uid', 'token': 'test-token'})
+        url = reverse('confirm-password-reset', kwargs={'uid': 'test-uid', 'token': 'test-token'})
         response = api_client.post(url, {'password': 'NewPass123!'}, format='json')
 
         assert response.status_code == status.HTTP_200_OK
@@ -174,7 +174,7 @@ class TestPasswordResetConfirmView:
         """Test password reset with invalid token"""
         mock_verify_token.return_value = None
 
-        url = reverse('confirm_password_reset', kwargs={'uid': 'invalid', 'token': 'invalid'})
+        url = reverse('confirm-password-reset', kwargs={'uid': 'invalid', 'token': 'invalid'})
         response = api_client.post(url, {'password': 'NewPass123!'}, format='json')
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -184,7 +184,7 @@ class TestPasswordResetConfirmView:
         """Test password reset with weak password"""
         mock_verify_token.return_value = verified_user
 
-        url = reverse('confirm_password_reset', kwargs={'uid': 'test-uid', 'token': 'test-token'})
+        url = reverse('confirm-password-reset', kwargs={'uid': 'test-uid', 'token': 'test-token'})
         response = api_client.post(url, {'password': '123'}, format='json')
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -194,7 +194,7 @@ class TestPasswordResetConfirmView:
         """Test password reset without password"""
         mock_verify_token.return_value = verified_user
 
-        url = reverse('confirm_password_reset', kwargs={'uid': 'test-uid', 'token': 'test-token'})
+        url = reverse('confirm-password-reset', kwargs={'uid': 'test-uid', 'token': 'test-token'})
         response = api_client.post(url, {}, format='json')
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -207,7 +207,7 @@ class TestLoginView:
         url = reverse('login')
         response = api_client.post(url, {
             'username': verified_user.username,
-            'password': 'TestPass123!'
+            'password': 'strong--_:TestPass123!'
         }, format='json')
 
         assert response.status_code == status.HTTP_200_OK
@@ -231,7 +231,7 @@ class TestLoginView:
         url = reverse('login')
         response = api_client.post(url, {
             'email': user.email,
-            'password': 'TestPass123!'
+            'password': 'strong--_:TestPass123!!'
         }, format='json')
 
         # Depends on your LoginSerializer implementation
@@ -311,7 +311,7 @@ class TestUpdateUserRoleView:
         """Test updating user role to admin"""
         api_client.force_authenticate(user=superuser)
 
-        url = reverse('update_user_role')
+        url = reverse('update-user-role')
         response = api_client.patch(url, {
             'user_id': verified_user.id,
             'role': 'admin'
@@ -327,7 +327,7 @@ class TestUpdateUserRoleView:
         admin_user = create_user(role='admin', is_staff=True, is_verified=True)
         api_client.force_authenticate(user=superuser)
 
-        url = reverse('update_user_role')
+        url = reverse('update-user-role')
         response = api_client.patch(url, {
             'user_id': admin_user.id,
             'role': 'user'
@@ -342,7 +342,7 @@ class TestUpdateUserRoleView:
         """Test updating role without superuser permission"""
         target_user = create_user(username='target', email='target@example.com')
 
-        url = reverse('update_user_role')
+        url = reverse('update-user-role')
         response = authenticated_client.patch(url, {
             'user_id': target_user.id,
             'role': 'admin'
@@ -352,7 +352,7 @@ class TestUpdateUserRoleView:
 
     def test_update_role_unauthenticated(self, api_client, verified_user):
         """Test updating role without authentication"""
-        url = reverse('update_user_role')
+        url = reverse('update-user-role')
         response = api_client.patch(url, {
             'user_id': verified_user.id,
             'role': 'admin'

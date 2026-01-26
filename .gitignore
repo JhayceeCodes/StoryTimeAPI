@@ -30,3 +30,6 @@ venv.bak/
 *.vscode
 *.idea
 *.pytest_cache
+
+
+.coverage
