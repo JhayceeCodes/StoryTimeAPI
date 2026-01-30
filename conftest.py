@@ -1,6 +1,7 @@
 import pytest, uuid
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 from accounts.models import Author
@@ -110,6 +111,35 @@ def create_story_api(api_client, author):
         )
     return _create
 
+
+@pytest.fixture
+def create_story(db, author):
+    """Factory fixture to create stories."""
+    def make_story(**kwargs):
+        defaults = {
+            'title': 'Test Story',
+            'content': 'This is test content for the story.',
+            'author': author,
+        }
+        defaults.update(kwargs)
+        return Story.objects.create(**defaults)
+    return make_story
+
+
+@pytest.fixture(autouse=True)
+def clear_cache():
+    """Automatically clear cache before each test"""
+    cache.clear()
+    yield
+    cache.clear()
+
+@pytest.fixture
+def another_author(create_user, db):
+    """Create another author for testing permissions"""
+    from accounts.models import Author
+    user = create_user(username='another_author', email='another@example.com', is_verified=True)
+    Author.objects.create(user=user, pen_name='Sung')
+    return user
 
 
 

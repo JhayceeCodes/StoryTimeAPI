@@ -24,7 +24,6 @@ class TestStoryViewset:
         response = create_story_api(payload)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-
     def test_create_story_unauthorized(self, api_client, story_data):
         """Test unauthorized story creation"""
         url = reverse('story-list')
@@ -87,7 +86,7 @@ class TestStoryViewset:
             story_data,
             django_assert_num_queries,
     ):
-        cache.clear()
+        #cache.clear()
 
         create_story_api({"title": "Story A", **story_data})
 
@@ -101,7 +100,7 @@ class TestStoryViewset:
 
     # METHOD B --- Checking time difference (Cache speed)
     def test_stories_list_faster_with_cache(self, api_client):
-        cache.clear()
+        #cache.clear()
         url = reverse("story-list")
 
         start = time.monotonic()
@@ -114,6 +113,36 @@ class TestStoryViewset:
 
         print(f"First: {first_time:.4f}s | Cached: {second_time:.4f}s") #confirm time difference
         assert second_time < first_time
+
+    def test_update_own_story(self, api_client, author, create_story):
+        """Test author can update their own story"""
+        user, author = author
+        story = create_story(author=author)
+        api_client.force_authenticate(user=user)
+
+        url = reverse('story-detail', kwargs={'pk': story.pk})
+        data = {'title': 'Updated Title'}
+
+        response = api_client.patch(url, data, format='json')
+
+        assert response.status_code == status.HTTP_200_OK
+        story.refresh_from_db()
+        assert story.title == 'Updated Title'
+
+    def test_cannot_update_others_story(self, api_client, author, another_author, create_story):
+        """Test user cannot update another user's story"""
+        _, author = author
+        story = create_story(author=author)  # Created by default author
+        api_client.force_authenticate(user=another_author)
+
+        url = reverse('story-detail', kwargs={'pk': story.pk})
+        data = {'title': 'Hacked Title'}
+
+        response = api_client.patch(url, data, format='json')
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        story.refresh_from_db()
+        assert story.title != 'Hacked Title'
 
 
 
