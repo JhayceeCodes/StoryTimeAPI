@@ -3,14 +3,14 @@ from accounts.models import Author, User
 
 class Story(models.Model):
     author = models.ForeignKey(Author, on_delete=models.SET_NULL, null=True, related_name='stories')
-    title = models.CharField(250)
+    title = models.CharField(max_length=250)
     GENRE_CHOICES = (
         ('mystery', 'Mystery'), 
         ('fiction', 'Fiction'),
         ('comedy', 'Comedy'),
         ('others', 'Others'),
     )
-    genre = models.CharField(max_length=7, choices=GENRE_CHOICES)
+    genre = models.CharField(max_length=7, choices=GENRE_CHOICES, default='others')
     content = models.TextField(max_length=3000)
     created_at = models.DateTimeField(auto_now_add=True)
     likes = models.PositiveIntegerField(default=0)

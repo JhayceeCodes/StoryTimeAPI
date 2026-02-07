@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.exceptions import PermissionDenied
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
@@ -41,6 +42,8 @@ from .throttles import (
 class StoryViewSet(ModelViewSet):
     queryset =Story.objects.all().select_related("author")
     serializer_class = StorySerializer
+
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     filter_backends = [
         DjangoFilterBackend,
@@ -102,13 +105,7 @@ class StoryViewSet(ModelViewSet):
         cache.delete("stories:list*")
         cache.delete(f"story:{instance.id}")
 
-    def put(self, request, *args, **kwargs):
-        return Response(
-            {"detail": "Use PATCH to update a story."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
 
-    
 
 """
 - user reacts to a story by sending a POST with story_id and reaction (like or dislike)
@@ -154,8 +151,7 @@ class ReactionView(APIView):
             {"message": "Reaction added"},
             status=status.HTTP_201_CREATED
         )
-    
-        
+
     @transaction.atomic
     def patch(self, request, story_id):
         story = get_object_or_404(Story, id=story_id)
@@ -165,10 +161,7 @@ class ReactionView(APIView):
         new_reaction = serializer.validated_data["reaction"]
 
         try:
-            reaction = Reaction.objects.get(
-                user=request.user,
-                story=story
-            )
+            reaction = Reaction.objects.get(user=request.user, story=story)
         except Reaction.DoesNotExist:
             return Response(
                 {"detail": "No existing reaction to update."},
@@ -181,54 +174,49 @@ class ReactionView(APIView):
                 status=status.HTTP_200_OK
             )
 
-        if new_reaction == "like":
-            Story.objects.filter(id=story.id).update(
-                likes=F("likes") + 1,
-                dislikes=F("dislikes") - 1
-            )
+        # decrement old
+        if reaction.reaction == "like":
+            Story.objects.filter(id=story.id, likes__gt=0).update(likes=F("likes") - 1)
         else:
-            Story.objects.filter(id=story.id).update(
-                likes=F("likes") - 1,
-                dislikes=F("dislikes") + 1
-            )
+            Story.objects.filter(id=story.id, dislikes__gt=0).update(dislikes=F("dislikes") - 1)
+
+        # increment new
+        if new_reaction == "like":
+            Story.objects.filter(id=story.id).update(likes=F("likes") + 1)
+        else:
+            Story.objects.filter(id=story.id).update(dislikes=F("dislikes") + 1)
 
         reaction.reaction = new_reaction
         reaction.save(update_fields=["reaction"])
 
-        return Response(
-            {"message": "Reaction updated."},
-            status=status.HTTP_200_OK
-        )
+        return Response({"message": "Reaction updated."})
 
     @transaction.atomic
     def delete(self, request, story_id):
         story = get_object_or_404(Story, id=story_id)
 
         try:
-            reaction = Reaction.objects.get(
-                user=request.user,
-                story=story
-            )
+            reaction = Reaction.objects.get(user=request.user, story=story)
         except Reaction.DoesNotExist:
             return Response(
                 {"detail": "Reaction not found."},
                 status=status.HTTP_404_NOT_FOUND
             )
-        
+
         if reaction.reaction == "like":
-            Story.objects.filter(id=story.id).update(likes=F("likes") - 1)
+            Story.objects.filter(id=story.id, likes__gt=0).update(likes=F("likes") - 1)
         else:
-            Story.objects.filter(id=story.id).update(delete=F("dislikes") - 1)
+            Story.objects.filter(id=story.id, dislikes__gt=0).update(dislikes=F("dislikes") - 1)
 
         reaction.delete()
-
-
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
 
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
     pagination_class = ReviewsPagination
+
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_throttles(self):
         if self.action == "create":
@@ -236,6 +224,8 @@ class ReviewViewSet(ModelViewSet):
         
         if self.action == "destroy":
             return [ReviewDeleteThrottle()]
+
+        return [UserRateThrottle()]
 
     def get_queryset(self):
         return Review.objects.filter(
@@ -248,7 +238,7 @@ class ReviewViewSet(ModelViewSet):
         if self.action == "partial_update":
             return [IsReviewOwner()]
         if self.action == "destroy":
-            return [CanDeleteReview() or IsReviewOwner()]
+            return [CanDeleteReview()]
         return [IsAuthenticated()]
 
     def perform_create(self, serializer):
@@ -260,21 +250,16 @@ class ReviewViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save(user=self.request.user, story=story)
 
-
-    def partial_update(self, request, *args, **kwargs):
+    def perform_update(self, serializer):
         review = self.get_object()
+
         if timezone.now() - review.created_at > timedelta(minutes=30):
-            return Response(
-                {"detail": "User can only update a review within 30 minutes."},
-                status=status.HTTP_403_FORBIDDEN
+            raise PermissionDenied(
+                "User can only update a review within 30 minutes."
             )
-        return super().partial_update(request, *args, **kwargs)
-    
-    def put(self, request, *args, **kwargs):
-        return Response(
-            {"detail": "Use PATCH to update a story."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
+
+        serializer.save()
+
 
 
 

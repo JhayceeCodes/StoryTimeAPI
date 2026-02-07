@@ -5,7 +5,7 @@ from django.core.cache import cache
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 from accounts.models import Author
-from stories.models import Story
+from stories.models import Story, Reaction, Rating, Review
 
 User = get_user_model()
 
@@ -141,7 +141,40 @@ def another_author(create_user, db):
     Author.objects.create(user=user, pen_name='Sung')
     return user
 
+@pytest.fixture
+def moderator(create_user, db):
+    """Create a moderator user"""
+    user = create_user(
+        username='moderator',
+        email='moderator@example.com',
+        is_verified=True,
+        role='moderator'
+    )
+    Author.objects.create(user=user, pen_name="ModPen")
+    return user
 
 
+
+@pytest.fixture
+def reaction_url():
+    def _url(story_id):
+        return reverse("story-reaction", kwargs={"story_id": story_id})
+    return _url
+
+@pytest.fixture
+def review_data():
+    return {"content": "This story is amazing!"}
+
+@pytest.fixture
+def review_url():
+    def _url(story_id):
+        return reverse("story-review-list", kwargs={"story_pk": story_id})
+    return _url
+
+@pytest.fixture
+def rating_url():
+    def _url(story_id):
+        return reverse("story-rating", kwargs={"story_id": story_id})
+    return _url
 
 

@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, UserManager
+
 import uuid
 
 class CustomUserManager(UserManager):
@@ -7,9 +8,11 @@ class CustomUserManager(UserManager):
         if not email:
             raise ValueError("Email is required")
         email = self.normalize_email(email)
+
         user = self.model(username=username, email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
+
         return user
 
     def create_superuser(self, username, email, password=None, **extra_fields):
@@ -30,6 +33,7 @@ class CustomUserManager(UserManager):
 class User(AbstractUser):
     email = models.EmailField(unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
     is_verified = models.BooleanField(default=False)
 
     ROLE_CHOICES = (
@@ -55,3 +59,7 @@ class Author(models.Model):
     user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, related_name='author')
     pen_name = models.CharField(max_length=50, unique=True)
     ban_status = models.BooleanField(default=False)
+
+
+
+

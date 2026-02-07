@@ -10,12 +10,12 @@ router = routers.DefaultRouter()
 router.register("stories", StoryViewSet, basename="story")
 
 stories_router = routers.NestedDefaultRouter(router, "stories", lookup="story")
-stories_router.register("reviews", ReviewViewSet, basename="story-reviews")
+stories_router.register("reviews", ReviewViewSet, basename="story-review")
 
 
 urlpatterns = router.urls + stories_router.urls + [
     path("stories/<int:story_id>/reaction/", ReactionView.as_view(), name="story-reaction"),
-    path("stories/<int:story_id>/rating/", RatingView.as_view(), name="story-ratings"),
+    path("stories/<int:story_id>/rating/", RatingView.as_view(), name="story-rating"),
 ]
 
 

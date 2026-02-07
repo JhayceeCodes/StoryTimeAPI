@@ -1,14 +1,17 @@
 from re import search
 from django.core.cache import cache
+from django.utils import timezone
+from datetime import timedelta
 import pytest, time
 from django.urls import reverse
 from rest_framework import status
-from .models import Story
+from .models import Story, Review, Reaction, Rating
 
 
 
 @pytest.mark.django_db
 class TestStoryViewset:
+
     def test_create_story_success(self, create_story_api, story_data):
         response = create_story_api(story_data)
 
@@ -144,10 +147,237 @@ class TestStoryViewset:
         story.refresh_from_db()
         assert story.title != 'Hacked Title'
 
+    def test_put_method_not_allowed(self, api_client, author, create_story, story_data):
+        """Test PUT method is not allowed (should use PATCH)"""
+        user, author = author
+        story = create_story(author=author)
+        api_client.force_authenticate(user=user)
+
+        url = reverse('story-detail', kwargs={'pk': story.pk})
+        data = {'title': 'Updated', 'content': story_data["content"]}
+
+        response = api_client.put(url, data, format='json')
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+    def test_delete_own_story(self, api_client, author, create_story):
+        """Test author can delete their own story"""
+        user, author = author
+        story = create_story(author=author)
+        api_client.force_authenticate(user=user)
+
+        url = reverse('story-detail', kwargs={'pk': story.pk})
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not Story.objects.filter(pk=story.pk).exists()
+
+    def test_moderator_can_delete_story(self, api_client, moderator, create_story):
+        """Test moderator can delete any story"""
+        story = create_story(author=moderator.author)
+        api_client.force_authenticate(user=moderator)
+
+        url = reverse('story-detail', kwargs={'pk': story.pk})
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not Story.objects.filter(pk=story.pk).exists()
+
+    def test_cannot_delete_others_story(self, api_client, another_author, create_story, author):
+        """Test regular user cannot delete another user's story"""
+        _, author = author
+        story = create_story(author=author)
+        api_client.force_authenticate(user=another_author)
+
+        url = reverse('story-detail', kwargs={'pk': story.pk})
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert Story.objects.filter(pk=story.pk).exists()
 
 
+@pytest.mark.django_db
+class TestReactionView:
+
+    def test_add_reaction(self, api_client, author, create_story, reaction_url):
+        user, author_profile = author
+        story = create_story(author=author_profile)
+
+        api_client.force_authenticate(user=user)
+        response = api_client.post(
+            reaction_url(story.id),
+            {"reaction": "like"},
+            format="json"
+        )
+
+        story.refresh_from_db()
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert story.likes == 1
+
+    def test_update_reaction(self, api_client, author, create_story, reaction_url):
+        user, author_profile = author
+        story = create_story(author=author_profile)
+
+        Reaction.objects.create(user=user, story=story, reaction="like")
+
+        api_client.force_authenticate(user=user)
+        response = api_client.patch(
+            reaction_url(story.id),
+            {"reaction": "dislike"},
+            format="json"
+        )
+
+        story.refresh_from_db()
+
+        assert response.status_code == status.HTTP_200_OK
+        assert story.likes == 0
+        assert story.dislikes == 1
+
+    def test_delete_reaction(self, api_client, author, create_story, reaction_url):
+        user, author_profile = author
+        story = create_story(author=author_profile)
+
+        Reaction.objects.create(user=user, story=story, reaction="like")
+
+        api_client.force_authenticate(user=user)
+        response = api_client.delete(reaction_url(story.id))
+
+        story.refresh_from_db()
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert story.likes == 0
 
 
+@pytest.mark.django_db
+class TestReviewViewSet:
+
+    def test_create_review(self, api_client, author, create_story, review_url, review_data):
+        user, author_profile = author
+        story = create_story(author=author_profile)
+
+        api_client.force_authenticate(user=user)
+        response = api_client.post(
+            review_url(story.id),
+            review_data,
+            format="json"
+        )
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert Review.objects.filter(story=story).exists()
+
+    def test_update_review_within_30_minutes(self, api_client, author, create_story):
+        user, author_profile = author
+        story = create_story(author=author_profile)
+
+        review = Review.objects.create(
+            user=user,
+            story=story,
+            content="Old review"
+        )
+
+        api_client.force_authenticate(user=user)
+        url = reverse("story-review-detail", kwargs={"story_pk": story.id, "pk": review.id})
+
+        response = api_client.patch(url, {"content": "Updated"}, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_cannot_update_review_after_30_minutes(self, api_client, author, create_story):
+        user, author_profile = author
+        story = create_story(author=author_profile)
+
+        review = Review.objects.create(
+            user=user,
+            story=story,
+            content="Old review",
+        )
+
+        #forces created_at backwards
+        Review.objects.filter(id=review.id).update(
+            created_at=timezone.now() - timedelta(minutes=31)
+        )
+
+        api_client.force_authenticate(user=user)
+        url = reverse("story-review-detail", kwargs={"story_pk": story.id, "pk": review.id})
+
+        response = api_client.patch(url, {"content": "Updated"}, format="json")
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_put_not_allowed(self, api_client, author, create_story):
+        user, author_profile = author
+        story = create_story(author=author_profile)
+        review = Review.objects.create(user=user, story=story, content="Test")
+
+        api_client.force_authenticate(user=user)
+        url = reverse("story-review-detail", kwargs={"story_pk": story.id, "pk": review.id})
+
+        response = api_client.put(url, {"content": "Updated"}, format="json")
+
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
 
+@pytest.mark.django_db
+class TestRatingAPI:
 
+    def test_author_cannot_rate_own_story(self, api_client, author, create_story, rating_url):
+        user, author_profile = author
+        story = create_story(author=author_profile)
+
+        api_client.force_authenticate(user=user)
+        response = api_client.post(
+            rating_url(story.id),
+            {"rating": 5},
+            format="json"
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_add_rating(self, api_client, author, another_author, create_story, rating_url):
+        _, author_profile = author
+        story = create_story(author=author_profile)
+
+        api_client.force_authenticate(user=another_author)
+        response = api_client.post(
+            rating_url(story.id),
+            {"rating": 4},
+            format="json"
+        )
+
+        story.refresh_from_db()
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert story.total_ratings == 1
+        assert story.average_rating == 4
+
+    def test_update_rating(self, api_client, author, another_author, create_story, rating_url):
+        _, author_profile = author
+        story = create_story(author=author_profile)
+
+        Rating.objects.create(user=another_author, story=story, rating=2)
+
+        api_client.force_authenticate(user=another_author)
+        response = api_client.patch(
+            rating_url(story.id),
+            {"rating": 5},
+            format="json"
+        )
+
+        story.refresh_from_db()
+
+        assert response.status_code == status.HTTP_200_OK
+        assert story.average_rating == 5
+
+    def test_delete_rating(self, api_client, author, another_author, create_story, rating_url):
+        _, author_profile = author
+        story = create_story(author=author_profile)
+
+        Rating.objects.create(user=another_author, story=story, rating=3)
+
+        api_client.force_authenticate(user=another_author)
+        response = api_client.delete(rating_url(story.id))
+
+        story.refresh_from_db()
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert story.total_ratings == 0
