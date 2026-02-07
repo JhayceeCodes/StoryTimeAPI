@@ -13,3 +13,4 @@ if DEBUG:
         "story_anon": "10000/min",
         "story_user": "10000/hour",
     })
+
