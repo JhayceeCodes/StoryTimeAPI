@@ -8,7 +8,7 @@ media
 
 # celery 
 celerybeat-schedule.* 
-
+celerybeat-schedule
 # Environments 
 .env 
 .venv 
