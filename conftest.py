@@ -15,7 +15,6 @@ def api_client():
     """Fixture for API client"""
     return APIClient()
 
-
 @pytest.fixture
 def user_data():
     """Fixture for user registration data"""
@@ -26,7 +25,6 @@ def user_data():
         'first_name': 'Test',
         'last_name': 'User'
     }
-
 
 @pytest.fixture
 def create_user(db):
@@ -44,12 +42,10 @@ def create_user(db):
 
     return make_user
 
-
 @pytest.fixture
 def verified_user(create_user):
     """Fixture for verified user"""
     return create_user(is_verified=True)
-
 
 @pytest.fixture
 def superuser(db):
@@ -63,13 +59,11 @@ def superuser(db):
     user.save()
     return user
 
-
 @pytest.fixture
 def authenticated_client(api_client, verified_user):
     """Fixture for authenticated API client"""
     api_client.force_authenticate(user=verified_user)
     return api_client
-
 
 @pytest.fixture
 def tokens_for_user(verified_user):
@@ -88,16 +82,12 @@ def story_data():
         "genre": "mystery",
     }
 
-
-
 @pytest.fixture
 def author(create_user, db):
     """Create a user with an author profile"""
     user = create_user(username='author', email='author@example.com', is_verified=True)
     author = Author.objects.create(user=user, pen_name='Satoshi')
     return user, author
-
-
 
 @pytest.fixture
 def create_story_api(api_client, author):
@@ -111,7 +101,6 @@ def create_story_api(api_client, author):
         )
     return _create
 
-
 @pytest.fixture
 def create_story(db, author):
     """Factory fixture to create stories."""
@@ -124,7 +113,6 @@ def create_story(db, author):
         defaults.update(kwargs)
         return Story.objects.create(**defaults)
     return make_story
-
 
 @pytest.fixture(autouse=True)
 def clear_cache():
