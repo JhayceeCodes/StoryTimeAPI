@@ -6,7 +6,6 @@ from unittest.mock import patch
 
 User = get_user_model()
 
-# Create your tests here.
 @pytest.mark.django_db
 class TestRegisterView:
 
